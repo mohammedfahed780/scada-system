@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظومة التحكم والإدارة الذكية </title>
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        /* تصميم شريط التنقل العلوي الاحترافي */
+        .navbar {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        .nav-pills .nav-link {
+            color: #fff;
+            font-weight: 500;
+            margin-right: 8px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        .nav-pills .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .nav-pills .nav-link.active {
+            background-color: #fff !important;
+            color: #0d6efd !important;
+            font-weight: 700;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid #eee;
+            font-weight: 700;
+            border-radius: 12px 12px 0 0 !important;
+        }
+        /* تصميم الأزرار المضيئة للأحمال */
+        .load-btn {
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .load-btn.btn-success {
+            background-color: #198754 !important;
+            box-shadow: 0 0 15px rgba(25, 135, 84, 0.6);
+            border-color: #198754;
+        }
+        .load-btn.btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            opacity: 0.6;
+        }
+        .data-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        .alert-box {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #f8d7da;
+            background-color: #fff5f5;
+            color: #842029;
+            border-radius: 8px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- --------------------------------------------------------- -->
+    <!-- الشريـط العلـوي الـذكي للمنظومـة (Navbar) -->
+    <!-- --------------------------------------------------------- -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <!-- اليمين: عنوان المنظومة الثابت -->
+            <a class="navbar-brand" href="#">
+                📊 SCADA المنظومة الذكية لإدارة الطاقة والتتبع الشمسي
+            </a>
+            
+            <!-- زر القائمة للهواتف -->
+            <button class="navbar-collapse-toggler navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- اليسار: أزرار الواجهات المتنقلة داخل الشريط العلوي -->
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="nav nav-pills" id="scadaTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view-pane" type="button" role="tab">📟  display interface</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="control-tab" data-bs-toggle="tab" data-bs-target="#control-pane" type="button" role="tab">⚡ controll unit (five load)</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config-pane" type="button" role="tab">⚙️ check interface</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- المحتوى الداخلي للواجهات الثلاث -->
+    <div class="container">
+        
+        <div class="tab-content" id="scadaTabsContent">
+            
+            <!-- --------------------------------------------------------- -->
+            <!-- الواجهة الأولى والافتراضية: واجهة العرض والمراقبة اللحظية -->
+            <!-- --------------------------------------------------------- -->
+            <div class="tab-pane fade show active" id="view-pane" role="tabpanel">
+                <div class="row">
+                    <!-- كروت القراءات الحية السريعة -->
+                    <div class="col-md-4">
+                        <div class="card text-center p-3">
+                            <div class="text-muted fw-bold">نسبة شحن البطارية (SOC)</div>
+                            <div class="data-value" id="val-soc">0.0 %</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center p-3">
+                            <div class="text-muted fw-bold">قدرة الألواح الحالية</div>
+                            <div class="data-value" id="val-power">0.0 W</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center p-3">
+                            <div class="text-muted fw-bold">نسبة الاستهلاك الحالي</div>
+                            <div class="data-value" id="val-consumption">0.0 %</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card text-center p-3">
+                            <div class="text-muted fw-bold">درجة الحرارة الحالية</div>
+                            <div class="data-value text-danger" id="val-temp">0.0 °C</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card text-center p-3">
+                            <div class="text-muted fw-bold">شدة الإشعاع الشمسي</div>
+                            <div class="data-value text-warning" id="val-irrad">0.0 W/m²</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <!-- صندوق التنبيهات باللون الأحمر -->
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-danger text-white">⚠️ صندوق التنبيهات الطارئة</div>
+                            <div class="card-body">
+                                <div class="alert-box" id="alert-container">
+                                    <div class="fw-bold text-dager" id="system-alert-text">[النظام]: جاري بدء الاتصال واستقبال البيانات...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <!-- صندوق الطقس المتوقع لليوم القادم (المستبدل) -->
+<div class="col-md-4">
+    <div class="card h-100">
+        <div class="card-header bg-dark text-white">🌤️ حالةالطقس المتوقع لليوم القادم </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush small" id="weather-forecast-box">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    التاريخ للغد: <span id="forecast-date" class="fw-bold">--/--/----</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    متوسط درجة الحرارة:  <span id="forecast-temp" class="fw-bold">-- °C</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                   نسبة الغيوم: <span id="forecast-clouds" class="fw-bold">-- %</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    حالة الطقس: <span id="forecast-summary" class="fw-bold text-primary">جاري جلب البيانات...</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+                    <!-- صندوق توقع الشحن لليوم القادم -->
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-success text-white">🔋 التوقع الذكي للشحن (AI)</div>
+                            <div class="card-body text-center d-flex flex-column justify-content-center">
+
+                                <h6 class="fw-bold text-success mb-3">حالة النظام المتوقعة غداً:</h6>
+                                <p class="fw-bold text-primary fs-5 mb-0" id="charge-prediction-text">يتم التحليل بناءً على خوارزمية الإشعاع المستقبلي...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- --------------------------------------------------------- -->
+            <!-- الواجهة الثانية: واجهة التحكم بالأحمال (5 أزرار مضيئة) -->
+            <!-- --------------------------------------------------------- -->
+            <div class="tab-pane fade" id="control-pane" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">⚡ لوحة التحكم قطع وتوصيل الأحمال الـ 5 عن بعد</div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-4">* الأزرار المضيئة باللون الأخضر تعني أن الحمل متصل وشغال حالياً في محاكاة الماتلاب.</p>
+                        <div class="row g-4">
+                            <!-- بريكر 1 -->
+                            <div class="col-md-4 text-center">
+                                <label class="fw-bold mb-2 d-block"> فصل الشحن (Breaker)</label>
+                                <button id="btn-load1" onclick="toggleLoad(1)" class="btn load-btn btn-success">مضيء / شغال</button>
+                            </div>
+                            <!-- حمل 2 -->
+                            <div class="col-md-4 text-center">
+                                <label class="fw-bold mb-2 d-block">(Load 1)</label>
+                                <button id="btn-load2" onclick="toggleLoad(2)" class="btn load-btn btn-secondary">مطفأ</button>
+                            </div>
+                            <!-- حمل 3 -->
+                            <div class="col-md-4 text-center">
+                                <label class="fw-bold mb-2 d-block">(Load 2)</label>
+                                <button id="btn-load3" onclick="toggleLoad(3)" class="btn load-btn btn-secondary">مطفأ</button>
+                            </div>
+                            <!-- حمل 4 -->
+                            <div class="col-md-6 text-center">
+                                <label class="fw-bold mb-2 d-block">  (Load 3)</label>
+                                <button id="btn-load4" onclick="toggleLoad(4)" class="btn load-btn btn-secondary">مطفأ</button>
+                            </div>
+                            <!-- حمل 5 -->
+                            <div class="col-md-6 text-center">
+                                <label class="fw-bold mb-2 d-block">  (Load 4)</label>
+                                <button id="btn-load5" onclick="toggleLoad(5)" class="btn load-btn btn-secondary">مطفأ</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- --------------------------------------------------------- -->
+            <!-- الواجهة الثالثة: إدخال القيم الابتدائية واستلام الإشعار -->
+            <!-- --------------------------------------------------------- -->
+            <div class="tab-pane fade" id="config-pane" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">⚙️ تهيئة المعاملات الابتدائية للمنظومة الكهروميكانيكية</div>
+                    <div class="card-body">
+                        <!-- 1. حاوية تسجيل البيانات (تظهر فقط عند الحاجة للتسجيل أو التعديل) -->
+                        <div id="registration-form-container">
+                            <form id="configForm" onsubmit="submitConfig(event)">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">سعة البطارية (Ah)</label>
+                                        <input type="number" class="form-control" id="init_cap" value="200" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">إجمالي قدرة الألواح (W)</label>
+                                         <input type="number" class="form-control" id="init_pv" value="1200" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">إجمالي قدرة الأحمال (W)</label>
+                                        <input type="number" class="form-control" id="init_load" value="500" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold">المنطقة المستهدفة</label>
+                                        <input type="text" class="form-control" id="init_region" value="تعز" required>
+                                    </div>
+                                  <div class="col-md-12 text-end">
+                                    <button type="submit" class="btn btn-primary px-5 fw-bold">فحص وتحليل كفاءة المنظومة</button>
+                                 </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- 2. حاوية المنظومة الحالية المحفوظة (تظهر عند القبول والنجاح) -->
+                        <div id="current-specs-container" class="d-none">
+                            <div class="alert alert-success border-2">
+                                <h5 class="fw-bold text-success mb-3">📋 تفاصيل منظومتك الحالية المسجلة:</h5>
+                                <div class="row g-3 text-dark mb-3">
+                                    <div class="col-md-3"><strong>سعة البطارية:</strong> <span id="saved-cap" class="badge bg-primary fs-6">--</span> Ah</div>
+                                    <div class="col-md-3"><strong>قدرة الألواح:</strong> <span id="saved-pv" class="badge bg-primary fs-6">--</span> W</div>
+                                    <div class="col-md-3"><strong>قدرة الأحمال:</strong> <span id="saved-load" class="badge bg-primary fs-6">--</span> W</div>
+                                    <div class="col-md-3"><strong>المنطقة المستهدفة:</strong> <span id="saved-region" class="badge bg-secondary fs-6">--</span></div>
+                                </div>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-warning fw-bold px-4" onclick="enableReRegistration()">🔄 هل تريد إعادة تسجيل منظومة أخرى؟</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- صندوق الإشعار القادم من البايثون (يظل ثابتاً كما هو) -->
+                        <div id="config-response-alert" class="alert alert-info mt-4 d-none" role="alert">
+                            <strong>🔔 إشعار النظام المعالج:</strong> <span id="config-response-text">جاري الحساب...</span>
+                        </div>
+                    </div>
+                    
+
+
+                </div>
+            </div>
+
+        </div>
+
+        <footer class="text-center text-muted small mt-5 py-3 border-top">
+            مشروع تخرج - هندسة الميكاترونكس والروبوتات - جامعة تعز © 2026
+        </footer>
+    </div>
+    <!-- النافذة المنبثقة للتهيئة الأولى للمنظومة -->
+<div class="modal fade" id="setupModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="setupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold" id="setupModalLabel">⚙️ تهيئة المنظومة الذكية لأول مرة</h5>
+      </div>
+      <div class="modal-body text-center py-4">
+        <p class="fs-5 fw-bold text-dark">أهلاً بك في منظومة التحكم الذكية!</p>
+        <p class="text-muted">الرجاء تسجيل خصائص ومكونات منظومتك أولاً للتأكد من توافقها واستقرارها قبل البدء في استخدام لوحة التحكم.</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-primary px-4 fw-bold" onclick="goToSetupTab()">الانتقال لتسجيل المنظومة ➡️</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+     <!-- Firebase App (النواة الأساسية) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<!-- Firebase Realtime Database (قاعدة البيانات اللحظية) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+
+   
+
+    <!-- JavaScript المراقبة والربط اللحظي اللامتزامن -->
+    <script>
+
+
+// كود إعدادات الفايربيس الخاص بك
+const firebaseConfig = {
+  apiKey: "AIzaSyCGUbQCFwJtrogN-3iUFStoIBOYpOMFihk",
+  authDomain: "scada-solar.firebaseapp.com",
+  databaseURL: "https://scada-solar-default-rtdb.firebaseio.com",
+  projectId: "scada-solar",
+  storageBucket: "scada-solar.firebasestorage.app",
+  messagingSenderId: "235741912541",
+  appId: "1:235741912541:web:b2f7637dae0ecadbfdaa34"
+};
+
+// تهيئة الفايربيس في الموقع
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+
+// دالة مستقلة لجلب طقس الغد مع ميزة إعادة المحاولة التلقائية عند الفشل
+async function fetchTomorrowForecastDirectly() {
+    const API_KEY = "YOUR_OPENWEATHER_API_KEY"; // تأكد من وضع مفتاحك الفعال هنا
+    
+    // جلب قيمة اسم المدينة مباشرة من الواجهة الثالثة
+    const cityInput = document.getElementById('init_region');
+    let CITY = cityInput ? cityInput.value.trim() : "Taiz";
+
+    // تحويل "تعز" إلى "Taiz" برمجياً لضمان استجابة السيرفر العالمي بشكل صحيح
+    if (CITY === "تعز") {
+        CITY = "Taiz";
+    }
+
+    if (!CITY) {
+        // إذا كان الحقل فارغاً، حاول مجدداً بعد 5 ثوانٍ
+        setTimeout(fetchTomorrowForecastDirectly, 5000);
+        return;
+    }
+
+    const url = `https://api.openweathermap.org/data/2.5/forecast?q=${CITY}&appid=${API_KEY}&units=metric`;
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('فشل في الاستجابة من السيرفر');
+        
+        const data = await response.json();
+
+        // حساب تاريخ الغد
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+        let tomorrowTemps = [];
+        let tomorrowClouds = [];
+        let weatherDescriptions = [];
+
+        // فلترة البيانات ليوم الغد فقط
+        data.list.forEach(item => {
+            if (item.dt_txt.startsWith(tomorrowStr)) {
+                tomorrowTemps.push(item.main.temp);
+                tomorrowClouds.push(item.clouds.all);
+                weatherDescriptions.push(item.weather[0].description);
+            }
+        });
+
+        if (tomorrowTemps.length > 0) {
+            const avgTemp = (tomorrowTemps.reduce((a, b) => a + b, 0) / tomorrowTemps.length).toFixed(1);
+            const avgClouds = (tomorrowClouds.reduce((a, b) => a + b, 0) / tomorrowClouds.length).toFixed(0);
+
+            // تحديد حالة الطقس وترجمتها
+            let rawSummary = weatherDescriptions[Math.floor(weatherDescriptions.length / 2)] || "clear";
+            let arabicSummary = "صافي ☀️";
+            if (rawSummary.includes('cloud')) arabicSummary = "غائم جزئياً ⛅";
+            else if (rawSummary.includes('rain')) arabicSummary = "أمطار 🌧️";
+
+            // تحديث واجهة الصندوق بنجاح
+            document.getElementById('forecast-date').innerText = tomorrowStr;
+            document.getElementById('forecast-temp').innerText = avgTemp + " °C";
+            document.getElementById('forecast-clouds').innerText = avgClouds + " %";
+            document.getElementById('forecast-summary').innerText = arabicSummary;
+            
+            console.log("تم جلب بيانات الطقس بنجاح وايقاف محاولات الاتصال.");
+        }
+    } catch (error) {
+        console.warn("خطأ في الاتصال بالطقس. سيتم إعادة المحاولة بعد 10 ثوانٍ...", error);
+        document.getElementById('forecast-summary').innerText = "فشل الاتصال.. جاري إعادة المحاولة 🔄";
+        
+        // إعادة المحاولة تلقائياً بعد 10 ثوانٍ (10000 ملي ثانية) وظيفتها تكرار المحاولة حتى تنجح
+        setTimeout(fetchTomorrowForecastDirectly, 10000);
+    }
+}
+       
+       
+
+
+// دالة الاستماع للبيانات اللحظية من الفايربيس مباشرة
+function listenToLiveDashboard() {
+    db.ref('system_data').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
+
+        // تحديث القراءات في الواجهة
+        document.getElementById('val-soc').innerText = (data.soc || 0.0) + " %";
+        document.getElementById('val-power').innerText = (data.power || 0.0) + " W";
+        document.getElementById('val-consumption').innerText = (data.consumption || 0.0) + " %";
+        document.getElementById('val-temp').innerText = (data.current_temp || 0.0) + " °C";
+        document.getElementById('val-irrad').innerText = (data.current_rad || 0.0) + " W/m²";
+        
+        // تحديث توقعات الذكاء الاصطناعي والتنبيهات
+        if (data.ai_prediction) {
+            document.getElementById('charge-prediction-text').innerText = data.ai_prediction;
+        } else {
+            document.getElementById('charge-prediction-text').innerText = "جاري التحليل...";
+        }
+        
+        if (data.system_alert){
+            document.getElementById('system-alert-text').innerText = data.system_alert;
+        }
+
+        // تحديث حالة الأحمال (الأزرار الـ 5)
+        for (let i = 1; i <= 5; i++) {
+            let btn = document.getElementById('btn-load' + i);
+            if (data.breakers && data.breakers[i] === 1.0) {
+                btn.className = "btn load-btn btn-success";
+                btn.innerText = "مضيء / متصل";
+                btn.dataset.status = "1"; // لحفظ الحالة الحالية في الزر
+            } else {
+                btn.className = "btn load-btn btn-secondary";
+                btn.innerText = "مطفأ / مقطوع";
+                btn.dataset.status = "0";
+            }
+        }
+    }, (error) => {
+        console.error("خطأ في قراءة بيانات الفايربيس اللحظية:", error);
+    });
+}
+
+
+
+// دالة عكس حالة الحمل وتحديثها في الفايربيس مباشرة
+// 
+function toggleLoad(loadId) {
+    const btn = document.getElementById('btn-load' + loadId);
+    // قراءة الحالة الحالية (إذا كانت 1 نجعلها 0، والعكس)
+    const currentStatus = btn.dataset.status === "1" ? 0.0 : 1.0;
+
+    // تحديث القيمة مباشرة في مسار الحمل المحدد بالفايربيس
+    db.ref(`system_data/breakers/${loadId}`).set(currentStatus)
+        .then(() => {
+            console.log(`تم تحديث الحمل ${loadId} في قاعدة البيانات بنجاح إلى: ${currentStatus}`);
+        })
+        .catch(err => console.error("خطأ في تحديث حالة الحمل:", err));
+}  
+
+        // دالة إرسال تهيئة المنظومة عند الدخول أول مرة واستلام تقرير الاستقرار من البايثون
+// دالة إرسال تهيئة المنظومة واستلام تقرير الاستقرار من البايثون وحفظها
+
+// دالة إرسال تهيئة المنظومة وحفظها بالفايربيس
+function submitConfig(event) {
+    event.preventDefault();
+    
+    const cap = parseFloat(document.getElementById('init_cap').value);
+    const pv = parseFloat(document.getElementById('init_pv').value);
+    const load = parseFloat(document.getElementById('init_load').value);
+    const region = document.getElementById('init_region').value;
+
+    const alertDiv = document.getElementById('config-response-alert');
+    const textSpan = document.getElementById('config-response-text');
+    alertDiv.classList.remove('d-none');
+    textSpan.innerHTML = "🔄 جاري حفظ البيانات وتحليل كفاءة المنظومة بالفايربيس...";
+
+    // حفظ البيانات في الفايربيس
+    const configData = {
+        cap: cap,
+        pv: pv,
+        load: load,
+        region: region,
+        is_configured: true
+    };
+
+    db.ref('system_data/config').set(configData)
+        .then(() => {
+            alertDiv.className = "alert alert-success mt-4";
+            textSpan.innerHTML = "✅ تم حفظ معاملات المنظومة بنجاح في قاعدة البيانات السحابية!";
+            
+            // تحديث واجهة العرض بالقيم الجديدة
+            updateSpecsUI(cap, pv, load, region);
+
+            // الانتقال التلقائي لواجهة العرض بعد ثانيتين
+            setTimeout(() => {
+                const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
+                viewTab.show();
+            }, 2000);
+            
+            fetchTomorrowForecastDirectly();
+        })
+        .catch(err => {
+            alertDiv.className = "alert alert-danger mt-4";
+            textSpan.innerHTML = "❌ فشل حفظ البيانات، تأكد من اتصال الإنترنت الخاص بك.";
+            console.error("Error writing config to Firebase:", err);
+        });
+}
+
+
+
+
+// دالة مساعدة لتحديث واجهة القيم المحفوظة وإظهارها وإخفاء نموذج الإدخال
+function updateSpecsUI(cap, pv, load, region) {
+    document.getElementById('saved-cap').innerText = cap;
+    document.getElementById('saved-pv').innerText = pv;
+    document.getElementById('saved-load').innerText = load;
+    document.getElementById('saved-region').innerText = region;
+
+    // إخفاء نموذج الإدخال وإظهار معلومات المنظومة الحالية المسجلة
+    document.getElementById('registration-form-container').classList.add('d-none');
+    document.getElementById('current-specs-container').classList.remove('d-none');
+}
+
+
+// دالة تفعيل إعادة التهيئة (تطلب من البايثون تصفير القيم وإعادة تشغيل التهيئة)
+// دالة تفعيل إعادة التهيئة وتصفير القيم في الفايربيس
+function enableReRegistration() {
+    if (confirm("⚠️ هل أنت متأكد أنك تريد إعادة تهيئة المعالج ومسح الإعدادات الحالية؟")) {
+        // تصفير حالة التهيئة في الفايربيس
+        db.ref('system_data/config/is_configured').set(false)
+            .then(() => {
+                window.location.reload();
+            })
+            .catch(err => {
+                console.error("Error resetting setup in Firebase:", err);
+                alert("❌ فشل الاتصال بالفايربيس لإعادة التهيئة.");
+            });
+    }
+}
+
+
+// دالة لتوجيه المستخدم لواجهة التهيئة عند الضغط على الزر داخل النافذة المنبثقة
+function goToSetupTab() {
+    const modalElement = document.getElementById('setupModal');
+    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+    if (modalInstance) modalInstance.hide(); // إغلاق النافذة
+    
+    const configTab = new bootstrap.Tab(document.getElementById('config-tab'));
+    configTab.show(); // فتح واجهة الإدخال تلقائياً
+}
+// دالة التحقق من حالة النظام عند تشغيل الموقع لأول مرة
+
+// دالة التحقق من حالة النظام عبر الفايربيس عند تشغيل الموقع
+function checkSystemSetupOnLoad() {
+    db.ref('system_data/config').once('value')
+        .then((snapshot) => {
+            const data = snapshot.val();
+            if (data && data.is_configured === true) {
+                // تعبئة حقول الإدخال بالقيم المخزنة
+                document.getElementById('init_cap').value = data.cap;
+                document.getElementById('init_pv').value = data.pv;
+                document.getElementById('init_load').value = data.load;
+                document.getElementById('init_region').value = data.region;
+                
+                // تحديث واجهة تفاصيل المنظومة الحالية
+                updateSpecsUI(data.cap, data.pv, data.load, data.region);
+
+                // فتح واجهة العرض
+                const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
+                viewTab.show();
+            } else {
+                // إظهار النافذة المنبثقة لإجبار المستخدم على التسجيل
+                const setupModal = new bootstrap.Modal(document.getElementById('setupModal'));
+                setupModal.show();
+                
+                const configTab = new bootstrap.Tab(document.getElementById('config-tab'));
+                configTab.show();
+            }
+        })
+        .catch(err => {
+            console.error("خطأ أثناء جلب إعدادات التهيئة من الفايربيس:", err);
+        });
+}
+   
+
+
+
+document.addEventListener('DOMContentLoaded', () =>
+{
+    checkSystemSetupOnLoad();
+    fetchTomorrowForecastDirectly();
+    listenToLiveDashboard();
+});
+
+    </script>
+</body>
+</html>
