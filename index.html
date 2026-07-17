@@ -505,6 +505,7 @@ function toggleLoad(loadId) {
 
 // دالة إرسال تهيئة المنظومة وحفظها بالف
 // دالة إرسال الأرقام وتجميد الواجهة بالكامل حتى يوافق البايثون
+
 function submitConfig(event) {
     event.preventDefault();
     
@@ -513,27 +514,6 @@ function submitConfig(event) {
     const load = parseFloat(document.getElementById('init_load').value);
     const region = document.getElementById('init_region').value;
 
-    const alertDiv = document.getElementById('config-response-alert');
-    const textSpan = document.getElementById('config-response-text');
-    
-    // جلب عنصر النافذة المنبثقة المفتوحة لمنع إغلاقها نهائياً
-    const configModalElement = document.getElementById('configModal');
-    // إجبار النافذة ألا تغلق عند الضغط خارجها أو الضغط على زر التراجع
-    const configModal = bootstrap.Modal.getOrCreateInstance(configModalElement, {
-        backdrop: 'static',
-        keyboard: false
-    });
-    
-    // 1. تحويل الصندوق للون الأصفر (وضع الانتظار) وتثبيت الحظر
-    alertDiv.classList.remove('d-none');
-    alertDiv.className = "alert alert-warning mt-4"; 
-    textSpan.innerHTML = "🔄 جاري إرسال البيانات إلى المعالج.. يرجى الانتظار لحين فحص كفاءة المنظومة... ⏳";
-
-    // تجميد أزرار الإدخال داخل النافذة أثناء الانتظار لمنع التلاعب
-    const submitBtn = event.target.querySelector('button[type="submit"]');
-    if(submitBtn) submitBtn.disabled = true;
-
-    // 2. رفع الأرقام وتصفير الحالات بانتظار البايثون
     const configData = {
         cap: cap,
         pv: pv,
@@ -547,71 +527,99 @@ function submitConfig(event) {
 
     db.ref('system_data/config').set(configData)
         .then(() => {
-            console.log("تم رفع الأرقام بنجاح.. الواجهة مقفلة تماماً بانتظار قرار البايثون...");
+            console.log("تم تسجيل البيانات مؤقتاً بنجاح.");
             
-            // 3. الاستماع اللحظي الصارم لرد البايثون (النافذة ما زالت مفتوحة ومجبرة)
-            db.ref('system_data/config').on('value', (snapshot) => {
-                const pythonResponse = snapshot.val();
-                
-                // عندما ينتهي البايثون ويغير الحالة إلى true
-                if (pythonResponse && pythonResponse.analysis_done === true) {
-                    
-                    const serverMessage = pythonResponse.response_message || "لم يتم تحديد رسالة من المعالج.";
-
-                    // الحالة الأولى والأهم: البايثون وافق (is_compatible === true)
-                    if (pythonResponse.is_compatible === true) {
-                        alertDiv.className = "alert alert-success mt-4"; // يتحول للأخضر
-                        textSpan.innerHTML = serverMessage; 
-                        
-                        // تحديث بيانات النظام المستقرة
-                        updateSpecsUI(cap, pv, load, region);
-
-                        // إيقاف الاستماع
-                        db.ref('system_data/config').off('value');
-                        
-                        // السماح للمستخدم بالدخول بعد ثانيتين ونصف وإغلاق النافذة المنبثقة لأول مرة!
-                        setTimeout(() => {
-                            if(submitBtn) submitBtn.disabled = false;
-                            
-                            // إغلاق النافذة المنبثقة برمجياً لأن البايثون وافق
-                            configModal.hide(); 
-                            
-                            // نقله تلقائياً للوحة التحكم الرئيسية
-                            const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
-                            viewTab.show();
-                        }, 2500);
-
-                    } 
-                    // الحالة الثانية: البايثون رفض المنظومة (is_compatible === false)
-                    else {
-                        alertDiv.className = "alert alert-danger mt-4"; // تحويل اللون للأحمر (فشل/تحذير)
-                        textSpan.innerHTML = serverMessage; // عرض العبارة النصية للبايثون (مثال: المنظومة تحتاج ألواح)
-                        
-                        // إعادة تفعيل زر الإرسال لكي يصحح المستخدم الأرقام ويضغط مجدداً
-                        if(submitBtn) submitBtn.disabled = false;
-                        
-                        // إيقاف الاستماع الحالي لكي ننتظر الضغطة القادمة والأرقام الجديدة
-                        db.ref('system_data/config').off('value');
-                        
-                        // ملاحظة: لم نكتب (configModal.hide) هنا، مما يعني أن النافذة ستظل جاثمة ومقفلة فوق الشاشة تماماً!
-                    }
-                }
-            });
+            // إغلاق النافذة المنبثقة بشكل طبيعي بعد التسجيل لرؤية واجهة الفحص
+            const configModalElement = document.getElementById('configModal');
+            const configModal = bootstrap.Modal.getInstance(configModalElement);
+            if (configModal) configModal.hide();
         })
         .catch(err => {
-            alertDiv.className = "alert alert-danger mt-4";
-            textSpan.innerHTML = "❌ فشل اتصال الإنترنت الخاص بك.";
-            if(submitBtn) submitBtn.disabled = false;
-            console.error("Error:", err);
+            alert("فشل في تسجيل البيانات، تحقق من الإنترنت.");
+            console.error(err);
         });
 }
         
+        
+
+
+function startSystemCheck() {
+    const alertDiv = document.getElementById('config-response-alert');
+    const textSpan = document.getElementById('config-response-text');
+    const tabsList = document.querySelectorAll('.nav-pills .nav-link');
+    
+    // أ. التأكيد على شل حركة التبويبات بالكامل في الخلفية لمنع الهروب
+    tabsList.forEach(tab => {
+        tab.classList.add('disabled');
+        tab.style.pointerEvents = 'none';
+    });
+
+    // ب. إعادة فتح النافذة المنبثقة برمجياً وقفلها بالإكراه (static)
+    const configModalElement = document.getElementById('configModal');
+    const configModal = bootstrap.Modal.getOrCreateInstance(configModalElement, {
+        backdrop: 'static',
+        keyboard: false
+    });
+    configModal.show(); 
+
+    // ج. تحويل التنبيه داخل النافذة للون الأصفر (وضع الانتظار والمعالجة)
+    alertDiv.classList.remove('d-none');
+    alertDiv.className = "alert alert-warning mt-4"; 
+    textSpan.innerHTML = "🔄 جاري إرسال البيانات إلى المعالج.. يرجى الانتظار لحين فحص كفاءة المنظومة... ⏳";
+
+    // د. إرسال أمر بدء الفحص للفايربيس وتصفير الحالات السابقة
+    db.ref('system_data/config').update({
+        analysis_done: false,
+        response_message: ""
+    }).then(() => {
+        
+        // هـ. بدء الاستماع اللحظي الصارم لقرار البايثون
+        db.ref('system_data/config').on('value', (snapshot) => {
+            const pythonResponse = snapshot.val();
+            
+            if (pythonResponse && pythonResponse.analysis_done === true) {
+                const serverMessage = pythonResponse.response_message || "لم يتم تحديد رسالة من المعالج.";
+
+                // [حالة القبول والنجاح المطلق]: البايثون وافق!
+                if (pythonResponse.is_compatible === true) {
+                    alertDiv.className = "alert alert-success mt-4"; // تحويل للأخضر
+                    textSpan.innerHTML = serverMessage; 
+                    
+                    updateSpecsUI(pythonResponse.cap, pythonResponse.pv, pythonResponse.load, pythonResponse.region);
+                    db.ref('system_data/config').off('value'); 
+                    
+                    // الانتظار ثانيتين ونصف ثم فك قفل أزرار الموقع وإخفاء النافذة
+                    setTimeout(() => {
+                        tabsList.forEach(tab => {
+                            tab.classList.remove('disabled');
+                            tab.style.pointerEvents = 'auto'; // تفعيل الأزرار العلوية مجدداً
+                        });
+                        
+                        configModal.hide(); // إخفاء النافذة أخيراً والسماح بالدخول
+                        
+                        const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
+                        viewTab.show();
+                    }, 2500);
+
+                } 
+                // [حالة الرفض]: البايثون رفض المنظومة وأرسل نصيحة فنية
+                else {
+                    alertDiv.className = "alert alert-danger mt-4"; // تحويل للأحمر
+                    textSpan.innerHTML = serverMessage; // عرض نصيحة الرفض
+                    
+                    db.ref('system_data/config').off('value'); 
+                    // تظل النافذة جاثمة بالإكراه فوق الشاشة باللون الأحمر، ولا خيار سوى التعديل وضغط تسجيل مجدداً
+                }
+            }
+        });
+    });
+        }
+
+
 
 
 
         
-
-
 
 // دالة مساعدة لتحديث واجهة القيم المحفوظة وإظهارها وإخفاء نموذج الإدخال
 function updateSpecsUI(cap, pv, load, region) {
@@ -656,25 +664,39 @@ function goToSetupTab() {
 
 // دالة التحقق من حالة النظام عبر الفايربيس عند تشغيل الموقع
 function checkSystemSetupOnLoad() {
+    const tabsList = document.querySelectorAll('.nav-pills .nav-link');
+
     db.ref('system_data/config').once('value')
         .then((snapshot) => {
             const data = snapshot.val();
-            if (data && data.is_configured === true) {
-                // تعبئة حقول الإدخال بالقيم المخزنة
+            if (data && data.is_configured === true && data.is_compatible === true) {
+                // إذا كان النظام مهيأ مسبقاً والبايثون موافق عليه، تفتح الأزرار طبيعي
+                tabsList.forEach(tab => {
+                    tab.classList.remove('disabled');
+                    tab.style.pointerEvents = 'auto';
+                });
+
                 document.getElementById('init_cap').value = data.cap;
                 document.getElementById('init_pv').value = data.pv;
                 document.getElementById('init_load').value = data.load;
                 document.getElementById('init_region').value = data.region;
                 
-                // تحديث واجهة تفاصيل المنظومة الحالية
                 updateSpecsUI(data.cap, data.pv, data.load, data.region);
 
-                // فتح واجهة العرض
                 const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
                 viewTab.show();
             } else {
-                // إظهار النافذة المنبثقة لإجبار المستخدم على التسجيل
-                const setupModal = new bootstrap.Modal(document.getElementById('setupModal'));
+                // إذا لم يسجل بعد، أو سجل ولكن لم يحصل على موافقة البايثون (شَل حركة الأزرار فوراً)
+                tabsList.forEach(tab => {
+                    tab.classList.add('disabled');
+                    tab.style.pointerEvents = 'none';
+                });
+
+                // إظهار النافذة المنبثقة لإجباره على الإدخال
+                const setupModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('configModal'), {
+                    backdrop: 'static',
+                    keyboard: false
+                });
                 setupModal.show();
                 
                 const configTab = new bootstrap.Tab(document.getElementById('config-tab'));
@@ -685,6 +707,7 @@ function checkSystemSetupOnLoad() {
             console.error("خطأ أثناء جلب إعدادات التهيئة من الفايربيس:", err);
         });
 }
+        
    
 
 
