@@ -500,10 +500,11 @@ async function fetchTomorrowForecastDirectly() {
     // جلب قيمة اسم المدينة، وإذا كانت فارغة أو لم تُحقن بعد، نثبت "Taiz" تلقائياً كقيمة مبدئية
 const cityInput = document.getElementById('init_region');
 let CITY = (cityInput && cityInput.value.trim()) ? cityInput.value.trim() : "Taiz";
-    // تحويل "تعز" إلى "Taiz" برمجياً لضمان استجابة السيرفر العالمي بشكل صحيح
-    if (CITY === "تعز") {
-        CITY = "Taiz";
+        // تحويل كلمة تعز إلى الإملاء الدقيق المعتمد في سيرفر OpenWeather
+    if (CITY === "تعز" || CITY.toLowerCase() === "taiz") {
+        CITY = "Taizz,YE";
     }
+    
 
     if (!CITY) {
         // إذا كان الحقل فارغاً، حاول مجدداً بعد 5 ثوانٍ
