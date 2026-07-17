@@ -457,21 +457,21 @@ async function fetchTomorrowForecastDirectly() {
 
 // دالة الاستماع للبيانات اللحظية من الفايربيس مباشرة
 function listenToLiveDashboard() {
-function listenToLiveDashboard() {
     db.ref('system_data').on('value', (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
 
-        // (الأكواد القديمة لتحديث SOC والحرارة تظل كما هي...)
+        // تحديث الكروت الحية
         document.getElementById('val-soc').innerText = (data.soc || 0.0) + " %";
         document.getElementById('val-power').innerText = (data.power || 0.0) + " W";
         document.getElementById('val-consumption').innerText = (data.consumption || 0.0) + " %";
         document.getElementById('val-temp').innerText = (data.current_temp || 0.0) + " °C";
         document.getElementById('val-irrad').innerText = (data.current_rad || 0.0) + " W/m²";
+        
         if (data.ai_prediction) document.getElementById('charge-prediction-text').innerText = data.ai_prediction;
         if (data.system_alert) document.getElementById('system-alert-text').innerText = data.system_alert;
 
-        // تحديث حالة الأحمال الـ 5
+        // تحديث حالة الأزرار الـ 5
         for (let i = 1; i <= 5; i++) {
             let btn = document.getElementById('btn-load' + i);
             if (data.breakers && data.breakers[i] === 1.0) {
@@ -485,17 +485,37 @@ function listenToLiveDashboard() {
             }
         }
 
-        // [التعديل الجديد]: بمجرد وصول التحديث من الفايربيس، نخفي نافذة الانتظار فوراً
-        const loadModalElement = document.getElementById('loadWaitModal');
-        if (loadModalElement) {
-            const loadModal = bootstrap.Modal.getInstance(loadModalElement);
-            if (loadModal) loadModal.hide();
+        // الفحص الصارم: نتحقق أولاً هل المنظومة تم قبولها؟
+        // إذا لم يتم قبول المنظومة بعد، يمنع منعاً باتاً غلق نافذة التسجيل الأساسية
+        const isSystemReady = data.config && data.config.is_configured === true && data.config.is_compatible === true;
+
+        if (isSystemReady) {
+            // نتحقق إذا كانت هناك طلبات أحمال معلقة في بايثون
+            let hasPendingRequests = false;
+            if (data.load_requests) {
+                for (let id in data.load_requests) {
+                    if (data.load_requests[id] && data.load_requests[id].processed === false) {
+                        hasPendingRequests = true;
+                        break;
+                    }
+                }
+            }
+
+            // نغلق نافذة انتظار الأحمال فقط وفقط إذا انتهى بايثون من المعالجة
+            if (!hasPendingRequests) {
+                const loadModalElement = document.getElementById('loadWaitModal');
+                if (loadModalElement) {
+                    const loadModal = bootstrap.Modal.getInstance(loadModalElement);
+                    if (loadModal) loadModal.hide();
+                }
+            }
         }
 
     }, (error) => {
-        console.error("Firebase live listening error:", error);
+        console.error("Firebase runtime error:", error);
     });
 }
+        
     
 
 
@@ -743,7 +763,7 @@ function goToSetupTab() {
 // دالة التحقق من حالة النظام عبر الفايربيس عند تشغيل الموقع
 function checkSystemSetupOnLoad() {
     const tabsList = document.querySelectorAll('.nav-pills .nav-link');
-    const modalElement = document.getElementById('setupModal'); // تم التعديل إلى ID الخاص بك
+    const modalElement = document.getElementById('setupModal'); 
 
     db.ref('system_data/config').once('value')
         .then((snapshot) => {
@@ -764,11 +784,13 @@ function checkSystemSetupOnLoad() {
                 const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
                 viewTab.show();
             } else {
+                // شل حركة الأزرار تماماً ومنع الهروب
                 tabsList.forEach(tab => {
                     tab.classList.add('disabled');
                     tab.style.pointerEvents = 'none';
                 });
 
+                // إظهار نافذة التسجيل إجبارياً ومنع إغلاقها بالنقر العشوائي
                 if (modalElement) {
                     const setupModal = bootstrap.Modal.getOrCreateInstance(modalElement, {
                         backdrop: 'static',
@@ -776,12 +798,16 @@ function checkSystemSetupOnLoad() {
                     });
                     setupModal.show();
                 }
+                
+                const configTab = new bootstrap.Tab(document.getElementById('config-tab'));
+                configTab.show();
             }
         })
         .catch(err => {
-            console.error("خطأ أثناء جلب إعدادات التهيئة من الفايربيس:", err);
+            console.error("Error loading config:", err);
         });
 }
+    
 
 
 
