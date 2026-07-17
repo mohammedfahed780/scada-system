@@ -125,6 +125,16 @@
             border-radius: 8px;
         }
     }
+
+        
+        @media (max-width: 767.98px) {
+    .navbar-brand { font-size: 1rem; }
+    .nav-pills .nav-link { font-size: 0.8rem; padding: 6px 8px; }
+    .card-body { padding: 10px; }
+    .data-value { font-size: 1.25rem; }
+    .load-btn { padding: 10px; font-size: 0.85rem; border-radius: 8px; }
+        }
+        
     </style>
     
 </head>
@@ -173,19 +183,19 @@
             <div class="tab-pane fade show active" id="view-pane" role="tabpanel">
                 <div class="row">
                     <!-- كروت القراءات الحية السريعة -->
-                    <div class="col-md-4">
+                    <div class="col-4 col-md-4">
                         <div class="card text-center p-3">
                             <div class="text-muted fw-bold">نسبة شحن البطارية (SOC)</div>
                             <div class="data-value" id="val-soc">0.0 %</div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-4 col-md-4">
                         <div class="card text-center p-3">
                             <div class="text-muted fw-bold">قدرة الألواح الحالية</div>
                             <div class="data-value" id="val-power">0.0 W</div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-4 col-md-4">
                         <div class="card text-center p-3">
                             <div class="text-muted fw-bold">نسبة الاستهلاك الحالي</div>
                             <div class="data-value" id="val-consumption">0.0 %</div>
@@ -207,7 +217,7 @@
 
                 <div class="row mt-2">
                     <!-- صندوق التنبيهات باللون الأحمر -->
-                    <div class="col-md-4">
+                    <div class="col-12 col-md-4">
                         <div class="card h-100">
                             <div class="card-header bg-danger text-white">⚠️ صندوق التنبيهات الطارئة</div>
                             <div class="card-body">
@@ -218,7 +228,7 @@
                         </div>
                     </div>
                      <!-- صندوق الطقس المتوقع لليوم القادم (المستبدل) -->
-<div class="col-md-4">
+<div class="col-12 col-md-4">
     <div class="card h-100">
         <div class="card-header bg-dark text-white">🌤️ حالةالطقس المتوقع لليوم القادم </div>
         <div class="card-body">
@@ -241,7 +251,7 @@
 </div>
 
                     <!-- صندوق توقع الشحن لليوم القادم -->
-                    <div class="col-md-4">
+                    <div class="col-12 col-md-4">
                         <div class="card h-100">
                             <div class="card-header bg-success text-white">🔋 التوقع الذكي للشحن (AI)</div>
                             <div class="card-body text-center d-flex flex-column justify-content-center">
@@ -264,27 +274,27 @@
                         <p class="text-muted small mb-4">* الأزرار المضيئة باللون الأخضر تعني أن الحمل متصل وشغال حالياً في محاكاة الماتلاب.</p>
                         <div class="row g-4">
                             <!-- بريكر 1 -->
-                            <div class="col-md-4 text-center">
+                            <div class="col-4 text-center">
                                 <label class="fw-bold mb-2 d-block"> فصل الشحن (Breaker)</label>
                                 <button id="btn-load1" onclick="toggleLoad(1)" class="btn load-btn btn-success">مضيء / شغال</button>
                             </div>
                             <!-- حمل 2 -->
-                            <div class="col-md-4 text-center">
+                            <div class="col-4 text-center">
                                 <label class="fw-bold mb-2 d-block">(Load 1)</label>
                                 <button id="btn-load2" onclick="toggleLoad(2)" class="btn load-btn btn-secondary">مطفأ</button>
                             </div>
                             <!-- حمل 3 -->
-                            <div class="col-md-4 text-center">
+                            <div class="col-4 text-center">
                                 <label class="fw-bold mb-2 d-block">(Load 2)</label>
                                 <button id="btn-load3" onclick="toggleLoad(3)" class="btn load-btn btn-secondary">مطفأ</button>
                             </div>
                             <!-- حمل 4 -->
-                            <div class="col-md-6 text-center">
+                            <div class="col-6 text-center">
                                 <label class="fw-bold mb-2 d-block">  (Load 3)</label>
                                 <button id="btn-load4" onclick="toggleLoad(4)" class="btn load-btn btn-secondary">مطفأ</button>
                             </div>
                             <!-- حمل 5 -->
-                            <div class="col-md-6 text-center">
+                            <div class="col-6 text-center">
                                 <label class="fw-bold mb-2 d-block">  (Load 4)</label>
                                 <button id="btn-load5" onclick="toggleLoad(5)" class="btn load-btn btn-secondary">مطفأ</button>
                             </div>
