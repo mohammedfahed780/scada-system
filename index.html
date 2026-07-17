@@ -127,13 +127,73 @@
     }
 
         
-        @media (max-width: 767.98px) {
-    .navbar-brand { font-size: 1rem; }
-    .nav-pills .nav-link { font-size: 0.8rem; padding: 6px 8px; }
-    .card-body { padding: 10px; }
-    .data-value { font-size: 1.25rem; }
-    .load-btn { padding: 10px; font-size: 0.85rem; border-radius: 8px; }
+        /* ======================================================= */
+    /* 🛠️ إجبار الهاتف على عرض شكل الكمبيوتر مصغراً وبأناقة */
+    /* ======================================================= */
+    @media (max-width: 767.98px) {
+        /* منع أي خروج جانبى أو لخبطة */
+        body {
+            font-size: 0.7rem !important;
         }
+        .container {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+            max-width: 100% !important;
+        }
+        /* تصغير شريط التنقل */
+        .navbar {
+            margin-bottom: 10px !important;
+            padding: 5px !important;
+        }
+        .navbar-brand {
+            font-size: 0.8rem !important;
+        }
+        .nav-pills .nav-link {
+            font-size: 0.65rem !important;
+            padding: 4px 6px !important;
+            margin-right: 2px !important;
+        }
+        /* تصغير الكروت والحواف الداخلية لمنع التداخل */
+        .card {
+            margin-bottom: 8px !important;
+            border-radius: 6px !important;
+        }
+        .card-header {
+            font-size: 0.75rem !important;
+            padding: 6px !important;
+        }
+        .card-body {
+            padding: 6px !important;
+        }
+        /* تصغير أرقام القراءات الحية لتتسع في السطر */
+        .data-value {
+            font-size: 1rem !important;
+        }
+        .text-muted {
+            font-size: 0.65rem !important;
+        }
+        /* تصغير أزرار التحكم الـ 5 لتصبح صغيرة ومتراصة */
+        .load-btn {
+            padding: 6px !important;
+            font-size: 0.7rem !important;
+            border-radius: 5px !important;
+        }
+        label {
+            font-size: 0.65rem !important;
+            margin-bottom: 2px !important;
+        }
+        /* صندوق الطقس والتنبيهات */
+        .list-group-item {
+            padding: 3px 5px !important;
+            font-size: 0.65rem !important;
+        }
+        .alert-box {
+            max-height: 80px !important;
+            padding: 4px !important;
+            font-size: 0.65rem !important;
+        }
+    }
+        
         
     </style>
     
@@ -217,7 +277,7 @@
 
                 <div class="row mt-2">
                     <!-- صندوق التنبيهات باللون الأحمر -->
-                    <div class="col-12 col-md-4">
+                      <div class="col-4 col-md-4">
                         <div class="card h-100">
                             <div class="card-header bg-danger text-white">⚠️ صندوق التنبيهات الطارئة</div>
                             <div class="card-body">
@@ -228,7 +288,7 @@
                         </div>
                     </div>
                      <!-- صندوق الطقس المتوقع لليوم القادم (المستبدل) -->
-<div class="col-12 col-md-4">
+  <div class="col-4 col-md-4">
     <div class="card h-100">
         <div class="card-header bg-dark text-white">🌤️ حالةالطقس المتوقع لليوم القادم </div>
         <div class="card-body">
@@ -251,7 +311,7 @@
 </div>
 
                     <!-- صندوق توقع الشحن لليوم القادم -->
-                    <div class="col-12 col-md-4">
+                    <div class="col-4 col-md-4">
                         <div class="card h-100">
                             <div class="card-header bg-success text-white">🔋 التوقع الذكي للشحن (AI)</div>
                             <div class="card-body text-center d-flex flex-column justify-content-center">
