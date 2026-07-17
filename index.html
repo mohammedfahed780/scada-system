@@ -317,6 +317,20 @@
             مشروع تخرج - هندسة الميكاترونكس والروبوتات - جامعة تعز © 2026
         </footer>
     </div>
+
+
+<!-- نافذة انتظار تفعيل وفصل الأحمال -->
+<div class="modal fade" id="loadWaitModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content text-center py-4">
+      <div class="spinner-border text-success mb-3" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+      <p class="fs-5 fw-bold text-dark mb-1">Please Wait...</p>
+      <p class="text-muted small px-3">Processing load connection with python controller, please wait.</p>
+    </div>
+  </div>
+</div>
+    
+    
     <!-- النافذة المنبثقة للتهيئة الأولى للمنظومة -->
 <div class="modal fade" id="setupModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="setupModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -443,67 +457,82 @@ async function fetchTomorrowForecastDirectly() {
 
 // دالة الاستماع للبيانات اللحظية من الفايربيس مباشرة
 function listenToLiveDashboard() {
+function listenToLiveDashboard() {
     db.ref('system_data').on('value', (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
 
-        // تحديث القراءات في الواجهة
+        // (الأكواد القديمة لتحديث SOC والحرارة تظل كما هي...)
         document.getElementById('val-soc').innerText = (data.soc || 0.0) + " %";
         document.getElementById('val-power').innerText = (data.power || 0.0) + " W";
         document.getElementById('val-consumption').innerText = (data.consumption || 0.0) + " %";
         document.getElementById('val-temp').innerText = (data.current_temp || 0.0) + " °C";
         document.getElementById('val-irrad').innerText = (data.current_rad || 0.0) + " W/m²";
-        
-        // تحديث توقعات الذكاء الاصطناعي والتنبيهات
-        if (data.ai_prediction) {
-            document.getElementById('charge-prediction-text').innerText = data.ai_prediction;
-        } else {
-            document.getElementById('charge-prediction-text').innerText = "جاري التحليل...";
-        }
-        
-        if (data.system_alert){
-            document.getElementById('system-alert-text').innerText = data.system_alert;
-        }
+        if (data.ai_prediction) document.getElementById('charge-prediction-text').innerText = data.ai_prediction;
+        if (data.system_alert) document.getElementById('system-alert-text').innerText = data.system_alert;
 
-        // تحديث حالة الأحمال (الأزرار الـ 5)
+        // تحديث حالة الأحمال الـ 5
         for (let i = 1; i <= 5; i++) {
             let btn = document.getElementById('btn-load' + i);
             if (data.breakers && data.breakers[i] === 1.0) {
                 btn.className = "btn load-btn btn-success";
                 btn.innerText = "مضيء / متصل";
-                btn.dataset.status = "1"; // لحفظ الحالة الحالية في الزر
+                btn.dataset.status = "1";
             } else {
                 btn.className = "btn load-btn btn-secondary";
                 btn.innerText = "مطفأ / مقطوع";
                 btn.dataset.status = "0";
             }
         }
+
+        // [التعديل الجديد]: بمجرد وصول التحديث من الفايربيس، نخفي نافذة الانتظار فوراً
+        const loadModalElement = document.getElementById('loadWaitModal');
+        if (loadModalElement) {
+            const loadModal = bootstrap.Modal.getInstance(loadModalElement);
+            if (loadModal) loadModal.hide();
+        }
+
     }, (error) => {
-        console.error("خطأ في قراءة بيانات الفايربيس اللحظية:", error);
+        console.error("Firebase live listening error:", error);
     });
 }
-
+    
 
 
 // دالة عكس حالة الحمل وتحديثها في الفايربيس مباشرة
-// 
 function toggleLoad(loadId) {
     const btn = document.getElementById('btn-load' + loadId);
-    // قراءة الحالة الحالية (إذا كانت 1 نجعلها 0، والعكس)
-    const currentStatus = btn.dataset.status === "1" ? 0.0 : 1.0;
+    // تحديد الحالة المطلوبة (عكس الحالة الحالية)
+    const nextStatus = btn.dataset.status === "1" ? 0.0 : 1.0;
 
-    // تحديث القيمة مباشرة في مسار الحمل المحدد بالفايربيس
-    db.ref(`system_data/breakers/${loadId}`).set(currentStatus)
-        .then(() => {
-            console.log(`تم تحديث الحمل ${loadId} في قاعدة البيانات بنجاح إلى: ${currentStatus}`);
-        })
-        .catch(err => console.error("خطأ في تحديث حالة الحمل:", err));
-}  
+    // 1. إظهار نافذة انتظار الحمل فوراً
+    const loadModalElement = document.getElementById('loadWaitModal');
+    if (loadModalElement) {
+        const loadModal = bootstrap.Modal.getOrCreateInstance(loadModalElement);
+        loadModal.show();
+    }
 
-        // دالة إرسال تهيئة المنظومة عند الدخول أول مرة واستلام تقرير الاستقرار من البايثون
-// دالة إرسال تهيئة المنظومة واستلام تقرير الاستقرار من البايثون وحفظها
+    // 2. إرسال الطلب في مسار منفصل للبايثون ليقوم بمعالجته
+    db.ref(`system_data/load_requests/${loadId}`).set({
+        requested_status: nextStatus,
+        processed: false
+    })
+    .then(() => {
+        console.log(`Command sent for Load ${loadId} -> Pending Python...`);
+    })
+    .catch(err => {
+        console.error("Connection error:", err);
+        // إخفاء النافذة في حال فشل الإنترنت تماماً
+        const loadModal = bootstrap.Modal.getInstance(loadModalElement);
+        if (loadModal) loadModal.hide();
+        alert("Connection failed!");
+    });
+}
+        
 
-// دالة إرسال تهيئة المنظومة وحفظها بالف
+        
+
+        
 // دالة إرسال الأرقام وتجميد الواجهة بالكامل حتى يوافق البايثون
 function submitConfig(event) {
     event.preventDefault();
