@@ -503,9 +503,8 @@ function toggleLoad(loadId) {
         // دالة إرسال تهيئة المنظومة عند الدخول أول مرة واستلام تقرير الاستقرار من البايثون
 // دالة إرسال تهيئة المنظومة واستلام تقرير الاستقرار من البايثون وحفظها
 
-// دالة إرسال تهيئة المنظومة وحفظها بالفايربيس
-
-// دالة إرسال الأرقام والانتظار حتى يرسل البايثون القرار والعبارة النصية
+// دالة إرسال تهيئة المنظومة وحفظها بالف
+// دالة إرسال الأرقام وتجميد الواجهة بالكامل حتى يوافق البايثون
 function submitConfig(event) {
     event.preventDefault();
     
@@ -517,60 +516,84 @@ function submitConfig(event) {
     const alertDiv = document.getElementById('config-response-alert');
     const textSpan = document.getElementById('config-response-text');
     
-    // 1. تحويل الصندوق للون الأصفر (وضع الانتظار) بمجرد الضغط
+    // جلب عنصر النافذة المنبثقة المفتوحة لمنع إغلاقها نهائياً
+    const configModalElement = document.getElementById('configModal');
+    // إجبار النافذة ألا تغلق عند الضغط خارجها أو الضغط على زر التراجع
+    const configModal = bootstrap.Modal.getOrCreateInstance(configModalElement, {
+        backdrop: 'static',
+        keyboard: false
+    });
+    
+    // 1. تحويل الصندوق للون الأصفر (وضع الانتظار) وتثبيت الحظر
     alertDiv.classList.remove('d-none');
     alertDiv.className = "alert alert-warning mt-4"; 
     textSpan.innerHTML = "🔄 جاري إرسال البيانات إلى المعالج.. يرجى الانتظار لحين فحص كفاءة المنظومة... ⏳";
 
-    // 2. رفع الأرقام فقط وتصفير حالات الاستجابة لكي يملأها البايثون من عنده
+    // تجميد أزرار الإدخال داخل النافذة أثناء الانتظار لمنع التلاعب
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if(submitBtn) submitBtn.disabled = true;
+
+    // 2. رفع الأرقام وتصفير الحالات بانتظار البايثون
     const configData = {
         cap: cap,
         pv: pv,
         load: load,
         region: region,
         is_configured: true,
-        analysis_done: false,   // البايثون سيحولها إلى true عند الانتهاء
-        is_compatible: false,   // البايثون سيحدد نعم (true) أم لا (false)
-        response_message: ""    // البايثون سيكتب العبارة النصية هنا بنفسه
+        analysis_done: false,   
+        is_compatible: false,   
+        response_message: ""    
     };
 
     db.ref('system_data/config').set(configData)
         .then(() => {
-            console.log("تم رفع الأرقام، بانتظار قرار المعالج (البايثون)...");
+            console.log("تم رفع الأرقام بنجاح.. الواجهة مقفلة تماماً بانتظار قرار البايثون...");
             
-            // 3. الاستماع اللحظي لرد البايثون
+            // 3. الاستماع اللحظي الصارم لرد البايثون (النافذة ما زالت مفتوحة ومجبرة)
             db.ref('system_data/config').on('value', (snapshot) => {
                 const pythonResponse = snapshot.val();
                 
-                // عندما يرى الموقع أن البايثون انتهى وحول القيمة إلى true
+                // عندما ينتهي البايثون ويغير الحالة إلى true
                 if (pythonResponse && pythonResponse.analysis_done === true) {
                     
-                    // نقرأ العبارة النصية التي كتبها البايثون داخل الفايربيس
                     const serverMessage = pythonResponse.response_message || "لم يتم تحديد رسالة من المعالج.";
 
-                    // إذا قرر البايثون أن المنظومة متوافقة
+                    // الحالة الأولى والأهم: البايثون وافق (is_compatible === true)
                     if (pythonResponse.is_compatible === true) {
-                        alertDiv.className = "alert alert-success mt-4"; // لون أخضر
-                        textSpan.innerHTML = serverMessage; // عرض عبارة البايثون الحرفية
+                        alertDiv.className = "alert alert-success mt-4"; // يتحول للأخضر
+                        textSpan.innerHTML = serverMessage; 
                         
-                        // حفظ البيانات في واجهةSpecs وعرض تفاصيل المنظومة المستقرة
+                        // تحديث بيانات النظام المستقرة
                         updateSpecsUI(cap, pv, load, region);
 
-                        // إيقاف الاستماع والانتقال للوحة التحكم بعد ثانيتين ونصف
+                        // إيقاف الاستماع
                         db.ref('system_data/config').off('value');
+                        
+                        // السماح للمستخدم بالدخول بعد ثانيتين ونصف وإغلاق النافذة المنبثقة لأول مرة!
                         setTimeout(() => {
+                            if(submitBtn) submitBtn.disabled = false;
+                            
+                            // إغلاق النافذة المنبثقة برمجياً لأن البايثون وافق
+                            configModal.hide(); 
+                            
+                            // نقله تلقائياً للوحة التحكم الرئيسية
                             const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
                             viewTab.show();
                         }, 2500);
 
                     } 
-                    // إذا قرر البايثون أن المنظومة غيـر متوافقة
+                    // الحالة الثانية: البايثون رفض المنظومة (is_compatible === false)
                     else {
-                        alertDiv.className = "alert alert-danger mt-4"; // لون أحمر
-                        textSpan.innerHTML = serverMessage; // عرض عبارة البايثون ونصيحته الحرفية
+                        alertDiv.className = "alert alert-danger mt-4"; // تحويل اللون للأحمر (فشل/تحذير)
+                        textSpan.innerHTML = serverMessage; // عرض العبارة النصية للبايثون (مثال: المنظومة تحتاج ألواح)
                         
-                        // نوقف الاستماع لكي نتيح للمستخدم التعديل والضغط مجدداً
+                        // إعادة تفعيل زر الإرسال لكي يصحح المستخدم الأرقام ويضغط مجدداً
+                        if(submitBtn) submitBtn.disabled = false;
+                        
+                        // إيقاف الاستماع الحالي لكي ننتظر الضغطة القادمة والأرقام الجديدة
                         db.ref('system_data/config').off('value');
+                        
+                        // ملاحظة: لم نكتب (configModal.hide) هنا، مما يعني أن النافذة ستظل جاثمة ومقفلة فوق الشاشة تماماً!
                     }
                 }
             });
@@ -578,9 +601,15 @@ function submitConfig(event) {
         .catch(err => {
             alertDiv.className = "alert alert-danger mt-4";
             textSpan.innerHTML = "❌ فشل اتصال الإنترنت الخاص بك.";
+            if(submitBtn) submitBtn.disabled = false;
             console.error("Error:", err);
         });
 }
+        
+
+
+
+        
 
 
 
