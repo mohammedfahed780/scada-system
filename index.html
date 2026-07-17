@@ -552,15 +552,31 @@ function startSystemCheck() {
     const textSpan = document.getElementById('config-response-text');
     const tabsList = document.querySelectorAll('.nav-pills .nav-link');
     
+    // 1. شل حركة التبويبات بالكامل لمنع الهروب
     tabsList.forEach(tab => {
         tab.classList.add('disabled');
         tab.style.pointerEvents = 'none';
     });
 
-    const configModalElement = document.getElementById('setupModal'); // تم التعديل إلى ID الخاص بك
+    const configModalElement = document.getElementById('setupModal');
     let configModal = null;
     
     if (configModalElement) {
+        // 2. تعديل محتوى النافذة برمجياً فوراً لتصبح "واجهة الانتظار" بدلاً من الترحيب القديم
+        configModalElement.querySelector('.modal-header').className = "modal-header bg-warning text-dark";
+        configModalElement.querySelector('.modal-title').innerHTML = "⏳ جاري فحص النظام الآن...";
+        
+        // وضع نص الانتظار الصارم داخل جسم النافذة مع مؤشر تحميل دائرى
+        configModalElement.querySelector('.modal-body').innerHTML = `
+            <div class="py-4">
+                <div class="spinner-border text-warning mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                <p class="fs-5 fw-bold text-dark">يرجى الانتظار...</p>
+                <p class="text-muted">جاري إرسال المعاملات إلى معالج البايثون للتحقق من توافق واستقرار المنظومة الكهروميكانيكية، يرجى عدم إغلاق الصفحة.</p>
+            </div>
+        `;
+        // إخفاء زر الانتقال السفلي أثناء الانتظار
+        configModalElement.querySelector('.modal-footer').classList.add('d-none');
+
         configModal = bootstrap.Modal.getOrCreateInstance(configModalElement, {
             backdrop: 'static',
             keyboard: false
@@ -568,28 +584,43 @@ function startSystemCheck() {
         configModal.show(); 
     }
 
+    // 3. تحديث صندوق التنبيه الخارجي في الواجهة أيضاً للاحتياط
     alertDiv.classList.remove('d-none');
     alertDiv.className = "alert alert-warning mt-4"; 
-    textSpan.innerHTML = "🔄 جاري إرسال البيانات إلى المعالج.. يرجى الانتظار لحين فحص كفاءة المنظومة... ⏳";
+    textSpan.innerHTML = "🔄 جاري فحص كفاءة المنظومة... يرجى الانتظار لحين صدور قرار المعالج... ⏳";
 
+    // 4. إرسال أمر بدء الفحص للفايربيس وتصفير الحالات السابقة
     db.ref('system_data/config').update({
         analysis_done: false,
         response_message: ""
     }).then(() => {
         
+        // 5. الاستماع اللحظي لقرار البايثون
         db.ref('system_data/config').on('value', (snapshot) => {
             const pythonResponse = snapshot.val();
             
             if (pythonResponse && pythonResponse.analysis_done === true) {
                 const serverMessage = pythonResponse.response_message || "لم يتم تحديد رسالة من المعالج.";
 
+                // [حالة القبول والنجاح]: البايثون وافق!
                 if (pythonResponse.is_compatible === true) {
+                    // تحويل النافذة للون الأخضر وعرض رسالة النجاح داخلها قبل الاختفاء
+                    configModalElement.querySelector('.modal-header').className = "modal-header bg-success text-white";
+                    configModalElement.querySelector('.modal-title').innerHTML = "✅ تم القبول بنجاح";
+                    configModalElement.querySelector('.modal-body').innerHTML = `
+                        <div class="py-3 text-success">
+                            <p class="fs-5 fw-bold">منظومتك مستقرة ومتوافقة تماماً!</p>
+                            <p class="small text-muted">${serverMessage}</p>
+                        </div>
+                    `;
+
                     alertDiv.className = "alert alert-success mt-4"; 
                     textSpan.innerHTML = serverMessage; 
                     
                     updateSpecsUI(pythonResponse.cap, pythonResponse.pv, pythonResponse.load, pythonResponse.region);
                     db.ref('system_data/config').off('value'); 
                     
+                    // الانتظار ثانيتين ونصف ليقرأ الرسالة ثم فك الحظر وإغلاق النافذة
                     setTimeout(() => {
                         tabsList.forEach(tab => {
                             tab.classList.remove('disabled');
@@ -600,9 +631,29 @@ function startSystemCheck() {
                         
                         const viewTab = new bootstrap.Tab(document.getElementById('view-tab'));
                         viewTab.show();
+                        
+                        // إعادة تهيئة المحتوى الافتراضي للنافذة للاستخدام المستقبلي
+                        window.location.reload();
                     }, 2500);
 
-                } else {
+                } 
+                // [حالة الرفض]: البايثون رفض المنظومة وأرسل نصيحة فنية
+                else {
+                    // تحويل النافذة للون الأحمر وعرض نصيحة الرفض مع زر لإعادة المحاولة والتعديل
+                    configModalElement.querySelector('.modal-header').className = "modal-header bg-danger text-white";
+                    configModalElement.querySelector('.modal-title').innerHTML = "❌ خطأ في التوافق الفني";
+                    configModalElement.querySelector('.modal-body').innerHTML = `
+                        <div class="py-3 text-danger">
+                            <p class="fs-5 fw-bold">المنظومة غير متوافقة أو غير مستقرة!</p>
+                            <p class="small text-muted">${serverMessage}</p>
+                        </div>
+                    `;
+                    // إظهار الفوتر وزر التعديل مجدداً برمجياً
+                    configModalElement.querySelector('.modal-footer').classList.remove('d-none');
+                    configModalElement.querySelector('.modal-footer').innerHTML = `
+                        <button type="button" class="btn btn-dark px-4 fw-bold" onclick="window.location.reload()">🔄 تعديل القيم وإعادة الفحص</button>
+                    `;
+
                     alertDiv.className = "alert alert-danger mt-4"; 
                     textSpan.innerHTML = serverMessage; 
                     db.ref('system_data/config').off('value'); 
