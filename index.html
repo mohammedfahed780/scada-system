@@ -257,7 +257,7 @@
                     </div>
                     <div class="col-4 col-md-4">
                         <div class="card text-center p-3">
-                            <div class="text-muted fw-bold">نسبة الاستهلاك الحالي</div>
+                            <div class="text-muted fw-bold">مقدار الاستهلاك الحالي</div>
                             <div class="data-value" id="val-consumption">0.0 W</div>
                         </div>
                     </div>
@@ -586,7 +586,7 @@ function listenToLiveDashboard() {
         // تحديث الكروت الحية
         document.getElementById('val-soc').innerText = (data.soc || 0.0) + " %";
         document.getElementById('val-power').innerText = (data.power || 0.0) + " W";
-        document.getElementById('val-consumption').innerText = (data.consumption || 0.0) + " %";
+        document.getElementById('val-consumption').innerText = (data.consumption || 0.0) + " W";
         document.getElementById('val-temp').innerText = (data.current_temp || 0.0) + " °C";
         document.getElementById('val-irrad').innerText = (data.current_rad || 0.0) + " W/m²";
         
