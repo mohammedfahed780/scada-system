@@ -557,7 +557,12 @@ const tomorrowStr = `${year}-${month}-${day}`;
             document.getElementById('forecast-temp').innerText = avgTemp + " °C";
             document.getElementById('forecast-clouds').innerText = avgClouds + " %";
             document.getElementById('forecast-summary').innerText = arabicSummary;
-            
+            db.ref("system_data/weather_forecast").set({
+    date: tomorrowStr,
+    temperature: parseFloat(avgTemp),
+    clouds: parseFloat(avgClouds),
+    summary: arabicSummary
+});
             console.log("تم جلب بيانات الطقس بنجاح وايقاف محاولات الاتصال.");
         }
     } catch (error) {
