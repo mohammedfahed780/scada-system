@@ -27,6 +27,22 @@
     letter-spacing:.5px;
     font-size:.9rem;
         }
+
+        .navbar .container{
+    position:relative;
+}
+
+#navbarNav{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+}
+
+.navbar-brand{
+    z-index:2;
+}
+
+        
     /* تصميم شريط التنقل العلوي الاحترافي */
     .navbar {
         box-shadow: 0 4px 10px rgba(0,0,0,0.08);
@@ -116,7 +132,7 @@
 }
 
 .prediction-box,
-.weather-box{
+.weather-box{ج
     flex:0 0 auto;
 }
 
@@ -253,7 +269,7 @@
             </button>
             
             <!-- اليسار: أزرار الواجهات المتنقلة داخل الشريط العلوي -->
-            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+            <div class="collapse navbar-collapse d-flex justify-content-center" id="navbarNav">
                 <ul class="nav nav-pills" id="scadaTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view-pane" type="button" role="tab">📟  display interface</button>
