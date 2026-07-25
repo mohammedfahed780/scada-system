@@ -14,7 +14,7 @@
     min-height:100vh;
     display:flex;
     flex-direction:column;
-    background:#0d1117;
+    background:linear-gradient(180deg,#0d1117,#182537);
     }
     .container{
     flex:1;
@@ -23,6 +23,14 @@
     padding:15px;
     gap:15px;
     }
+        footer{
+    color:#cfd8dc;
+    text-align:center;
+    padding:18px;
+    border-top:1px solid #3a3a3a;
+    letter-spacing:.5px;
+    font-size:.9rem;
+        }
     /* تصميم شريط التنقل العلوي الاحترافي */
     .navbar {
         box-shadow: 0 4px 10px rgba(0,0,0,0.08);
@@ -49,13 +57,16 @@
     }
     
     /* تصميم الكروت */
-    .card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
-        max-width: 100%;
-    }
+    .card{
+    border:none;
+    border-radius:16px;
+    box-shadow:0 8px 20px rgba(0,0,0,.18);
+    transition:.25s;
+}
+
+.card:hover{
+    transform:translateY(-3px);
+}
     .card-header {
         background-color: #fff;
         border-bottom: 1px solid #eee;
@@ -459,7 +470,7 @@
 
         </div>
 
-        <footer class="text-center text-muted small mt-5 py-3 border-top">
+        <footer class="text-center small mt-5 py-3 border-top border-secondary text-white-50">
             مشروع تخرج - هندسة الميكاترونكس والروبوتات - جامعة تعز © 2026
         </footer>
     </div>
