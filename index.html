@@ -165,16 +165,20 @@
         /* ======================================================= */
     /* 🛠️ إجبار الهاتف على عرض شكل الكمبيوتر مصغراً وبأناقة */
     /* ======================================================= */
-    media (max-width: 767.98px) {
-        /* منع أي خروج جانبى أو لخبطة */
-        body {
-            font-size: 0.7rem !important;
-        }
-        .container {
-            padding-left: 4px !important;
-            padding-right: 4px !important;
-            max-width: 100% !important;
-        }
+        @media (max-width: 767.98px) {
+        body{
+    margin:0;
+    min-height:100vh;
+    background:linear-gradient(180deg,#0d1117,#1a2433);
+    overflow-x:hidden;
+}
+
+.container{
+    width:100%;
+    max-width:1200px;
+    margin:auto;
+    padding:15px;
+}
         /* تصغير شريط التنقل */
         .navbar {
             margin-bottom: 10px !important;
@@ -227,8 +231,7 @@
             padding: 4px !important;
             font-size: 0.65rem !important;
         }
-    }
-        
+        }
         
     </style>
     
